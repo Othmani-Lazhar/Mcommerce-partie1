@@ -1,8 +1,10 @@
 package com.ecommerce.microcommerce.web.controller;
 
 import com.ecommerce.microcommerce.dao.ProductDao;
+import com.ecommerce.microcommerce.exceptions.ProduitGratuitException;
+import com.ecommerce.microcommerce.exceptions.ProduitIntrouvableException;
+import com.ecommerce.microcommerce.model.PrixMargeResponseDTO;
 import com.ecommerce.microcommerce.model.Product;
-import com.ecommerce.microcommerce.web.exceptions.ProduitIntrouvableException;
 import com.fasterxml.jackson.databind.ser.FilterProvider;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
@@ -16,58 +18,54 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.validation.Valid;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
-
-@Api( description="API pour es opérations CRUD sur les produits.")
-
+/**
+ * @author OTHMANI Lazhar
+ * on 28/03/2019
+ */
+@Api( description="API pour des opérations CRUD sur les produits.")
 @RestController
 public class ProductController {
+
 
     @Autowired
     private ProductDao productDao;
 
-
     //Récupérer la liste des produits
-
+    @ApiOperation(value = "Récupérer la liste des produits triés par ordre alphabétique")
     @RequestMapping(value = "/Produits", method = RequestMethod.GET)
-
     public MappingJacksonValue listeProduits() {
 
-        Iterable<Product> produits = productDao.findAll();
+        List<Product> produits = productDao.findByOrderByNomAsc();
 
         SimpleBeanPropertyFilter monFiltre = SimpleBeanPropertyFilter.serializeAllExcept("prixAchat");
-
         FilterProvider listDeNosFiltres = new SimpleFilterProvider().addFilter("monFiltreDynamique", monFiltre);
-
         MappingJacksonValue produitsFiltres = new MappingJacksonValue(produits);
-
         produitsFiltres.setFilters(listDeNosFiltres);
-
         return produitsFiltres;
     }
 
-
     //Récupérer un produit par son Id
     @ApiOperation(value = "Récupère un produit grâce à son ID à condition que celui-ci soit en stock!")
-    @GetMapping(value = "/Produits/{id}")
+    @GetMapping(value="/Produits/{id}")
+    public Product afficherUnProduit(@PathVariable int id)
+    {
+        if (!productDao.findById(id).isPresent())
+            throw new ProduitIntrouvableException("Product Not Exist with this id : "+id);
 
-    public Product afficherUnProduit(@PathVariable int id) {
-
-        Product produit = productDao.findById(id);
-
-        if(produit==null) throw new ProduitIntrouvableException("Le produit avec l'id " + id + " est INTROUVABLE. Écran Bleu si je pouvais.");
-
-        return produit;
+        return productDao.findById(id).get();
     }
-
-
-
 
     //ajouter un produit
     @PostMapping(value = "/Produits")
-
     public ResponseEntity<Void> ajouterProduit(@Valid @RequestBody Product product) {
+
+        if (product.getPrix()==0)
+            throw new ProduitGratuitException("Le prix de vente ne doit pas vaut 0 !");
 
         Product productAdded =  productDao.save(product);
 
@@ -83,26 +81,43 @@ public class ProductController {
         return ResponseEntity.created(location).build();
     }
 
+
+    @GetMapping(value = "test/produits/{prix}")
+    public List<Product> searchByPrice(@PathVariable int prix) {
+
+        return productDao.chercherUnProduitCher(prix);
+    }
+
+
     @DeleteMapping (value = "/Produits/{id}")
     public void supprimerProduit(@PathVariable int id) {
 
-        productDao.delete(id);
+        productDao.deleteById(id);
     }
 
-    @PutMapping (value = "/Produits")
-    public void updateProduit(@RequestBody Product product) {
 
+    @PutMapping (value = "/Produits")
+    public void updateProduit(@Valid @RequestBody Product product) {
+
+        if (product.getPrix()==0)
+            throw new ProduitGratuitException("Le prix de vente ne doit pas vaut 0 !");
         productDao.save(product);
     }
 
 
-    //Pour les tests
-    @GetMapping(value = "test/produits/{prix}")
-    public List<Product>  testeDeRequetes(@PathVariable int prix) {
 
-        return productDao.chercherUnProduitCher(400);
+    //Récupérer un produit par son Id
+    @ApiOperation(value = "Récupère la marge du prix d'un produit grâce à son ID à condition que celui-ci soit en stock!")
+    @GetMapping (value = "/AdminProduits")
+    public   List<PrixMargeResponseDTO> calculerMargeProduit() {
+
+        List<Product> produits = productDao.findAll();
+
+        List<PrixMargeResponseDTO> responseDTOList= produits.stream().map(product -> PrixMargeResponseDTO.builder().product(product).marge(product.getPrix()-product.getPrixAchat()).build()).collect(Collectors.toList());
+
+        return responseDTOList;
+
     }
-
 
 
 }
