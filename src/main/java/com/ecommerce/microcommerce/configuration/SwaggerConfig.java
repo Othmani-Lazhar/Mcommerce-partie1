@@ -8,6 +8,11 @@ import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
+/**
+ * @author OTHMANI Lazhar
+ * on 30/03/2019
+ */
+
 @Configuration
 @EnableSwagger2
 public class SwaggerConfig {
@@ -15,8 +20,8 @@ public class SwaggerConfig {
     public Docket api() {
         return new Docket(DocumentationType.SWAGGER_2)
                 .select()
-                .apis(RequestHandlerSelectors.basePackage("com.ecommerce.microcommerce.web"))
-                .paths(PathSelectors.regex("/Produits.*"))
+                .apis(RequestHandlerSelectors.basePackage("com.ecommerce.microcommerce.web.controller"))
+                .paths(PathSelectors.any())
                 .build();
     }
 }
