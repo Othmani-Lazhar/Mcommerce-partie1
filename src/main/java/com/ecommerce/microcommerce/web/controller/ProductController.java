@@ -1,10 +1,11 @@
 package com.ecommerce.microcommerce.web.controller;
 
 import com.ecommerce.microcommerce.dao.ProductDao;
-import com.ecommerce.microcommerce.exceptions.ProduitGratuitException;
-import com.ecommerce.microcommerce.exceptions.ProduitIntrouvableException;
+import com.ecommerce.microcommerce.web.exceptions.ProduitGratuitException;
+
 import com.ecommerce.microcommerce.model.PrixMargeResponseDTO;
 import com.ecommerce.microcommerce.model.Product;
+import com.ecommerce.microcommerce.web.exceptions.ProduitIntrouvableException;
 import com.fasterxml.jackson.databind.ser.FilterProvider;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
@@ -18,9 +19,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.validation.Valid;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
